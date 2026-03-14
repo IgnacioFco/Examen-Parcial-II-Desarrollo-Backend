@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Horror Films</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0b; --surface: #111114; --card: #18181d;
+    --border: rgba(255,255,255,0.08); --accent: #e63946;
+    --accent-dim: rgba(230,57,70,0.15); --text: #f0ede8;
+    --muted: #7a7880; --input-bg: #0f0f13; --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+  nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+  .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--accent); letter-spacing: 2px; }
+  .nav-right { display: flex; gap: 12px; align-items: center; }
+  #nav-user { font-size: 13px; color: var(--muted); }
+  #nav-user span { color: var(--text); font-weight: 500; }
+  .btn { padding: 8px 18px; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .18s; border: 1px solid transparent; }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-accent:hover { filter: brightness(1.15); }
+  .btn-accent:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-danger { background: transparent; border-color: rgba(230,57,70,.4); color: #e63946; }
+  .btn-danger:hover { background: var(--accent-dim); }
+  .btn-edit { background: transparent; border-color: rgba(255,255,255,.15); color: var(--muted); }
+  .btn-edit:hover { color: var(--text); }
+  .page { display: none; }
+  .page.active { display: block; }
+  .auth-wrap { min-height: calc(100vh - 60px); display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .auth-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; width: 100%; max-width: 420px; }
+  .auth-card h2 { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; margin-bottom: 6px; }
+  .auth-card p { color: var(--muted); font-size: 14px; margin-bottom: 2rem; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .8px; }
+  .field input, .field textarea { width: 100%; background: var(--input-bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 10px 14px; outline: none; transition: border .18s; }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .auth-switch { margin-top: 1.2rem; text-align: center; font-size: 13px; color: var(--muted); }
+  .auth-switch a { color: var(--accent); cursor: pointer; }
+  .auth-switch a:hover { text-decoration: underline; }
+  .msg { font-size: 13px; padding: 10px 14px; border-radius: var(--radius); margin-bottom: 1rem; display: none; }
+  .msg.error { background: rgba(230,57,70,.12); border: 1px solid rgba(230,57,70,.3); color: #f99; }
+  .msg.success { background: rgba(50,205,120,.1); border: 1px solid rgba(50,205,120,.3); color: #6fe8a8; }
+  .main-wrap { padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  .main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.8rem; }
+  .main-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 34px; letter-spacing: 2px; }
+  .stats-bar { display: flex; gap: 12px; margin-bottom: 2rem; flex-wrap: wrap; }
+  .stat-chip { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; font-size: 13px; color: var(--muted); }
+  .stat-chip strong { color: var(--text); font-size: 20px; font-family: 'Bebas Neue', sans-serif; display: block; }
+  .role-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .role-badge.admin { background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(230,57,70,.3); }
+  .role-badge.user { background: rgba(255,255,255,.06); color: var(--muted); border: 1px solid var(--border); }
+  .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .movie-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; transition: transform .2s, border-color .2s; }
+  .movie-card:hover { transform: translateY(-3px); border-color: rgba(230,57,70,.35); }
+  .movie-thumb-placeholder { height: 120px; background: #1a1a22; display: flex; align-items: center; justify-content: center; font-size: 42px; color: #2a2a30; }
+  .movie-body { padding: 1rem 1.2rem 1.2rem; }
+  .movie-genre { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 500; margin-bottom: 4px; }
+  .movie-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; margin-bottom: 4px; line-height: 1.1; }
+  .movie-meta { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .movie-rating { font-size: 12px; color: #f5a623; margin-bottom: 8px; }
+  .movie-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .movie-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+  .tag { font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(230,57,70,.2); }
+  .movie-actions { display: flex; gap: 8px; }
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 1rem; opacity: .3; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: none; align-items: center; justify-content: center; z-index: 200; padding: 1.5rem; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; padding: 2rem; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .modal-header h3 { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1.5px; }
+  .modal-close { background: transparent; border: none; color: var(--muted); font-size: 22px; cursor: pointer; }
+  .modal-close:hover { color: var(--text); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 1.5rem; }
+  .required-note { font-size: 11px; color: var(--muted); margin-bottom: 1rem; }
+  .required-note span { color: var(--accent); }
+  .loading { text-align: center; padding: 3rem; color: var(--muted); font-size: 14px; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .config-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 2rem; display: flex; align-items: center; gap: 12px; font-size: 13px; flex-wrap: wrap; }
+  .config-bar label { color: var(--muted); white-space: nowrap; }
+  .config-bar input { flex: 1; min-width: 200px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; padding: 6px 10px; outline: none; }
+  .config-bar input:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">&#9760; Horror Films</div>
+  <div class="nav-right">
+    <div id="nav-user" style="display:none"></div>
+    <button class="btn btn-ghost" id="btn-logout" style="display:none">Salir</button>
+  </div>
+</nav>
+
+<!-- AUTH -->
+<div class="page active" id="page-auth">
+  <div class="auth-wrap">
+    <div id="panel-login" class="auth-card">
+      <h2>Bienvenido</h2>
+      <p>Iniciá sesión para acceder a la colección.</p>
+      <div class="msg error" id="login-err"></div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="usuario@email.com"/>
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="login-pass" placeholder="••••••••"/>
+      </div>
+      <button class="btn btn-accent" id="btn-login" style="width:100%;margin-top:.5rem">Iniciar sesión</button>
+      <div class="auth-switch">¿No tenés cuenta? <a id="link-to-register">Registrarse</a></div>
+    </div>
+
+    <div id="panel-register" class="auth-card" style="display:none">
+      <h2>Crear cuenta</h2>
+      <p>Registrate para usar la plataforma.</p>
+      <div class="msg error" id="reg-err"></div>
+      <div class="msg success" id="reg-ok"></div>
+      <div class="field">
+        <label>Nombre</label>
+        <input type="text" id="reg-nombre" placeholder="Tu nombre"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="usuario@email.com"/>
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres"/>
+      </div>
+      <button class="btn btn-accent" id="btn-register" style="width:100%;margin-top:.5rem">Registrarse</button>
+      <div class="auth-switch">¿Ya tenés cuenta? <a id="link-to-login">Iniciar sesión</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- MOVIES -->
+<div class="page" id="page-movies">
+  <div class="main-wrap">
+    <div class="config-bar">
+      <label>Base URL de la API:</label>
+      <input type="text" id="api-base-input" value="http://localhost:3000"/>
+    </div>
+    <div class="main-header">
+      <h1>Películas de terror</h1>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="user-role-badge"></span>
+        <button class="btn btn-accent" id="btn-add-movie" style="display:none">+ Agregar</button>
+      </div>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+    <div id="movies-container"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+  </div>
+</div>
+
+<!-- MODAL PELÍCULA -->
+<div class="modal-overlay" id="movie-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Nueva película</h3>
+      <button class="modal-close" id="btn-modal-close">x</button>
+    </div>
+    <div class="msg error" id="form-err"></div>
+    <p class="required-note">Los campos con <span>*</span> son obligatorios.</p>
+
+    <div class="field">
+      <label>Título *</label>
+      <input type="text" id="f-title" placeholder="Ej: The Shining" maxlength="150"/>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Director *</label>
+        <input type="text" id="f-director" placeholder="Ej: Stanley Kubrick"/>
+      </div>
+      <div class="field">
+        <label>País</label>
+        <input type="text" id="f-country" placeholder="Ej: USA"/>
+      </div>
+    </div>
+
+    <div class="field-row3">
+      <div class="field">
+        <label>Año *</label>
+        <input type="number" id="f-year" placeholder="1980" min="1888" max="2025"/>
+      </div>
+      <div class="field">
+        <label>Duración (min) *</label>
+        <input type="number" id="f-duration" placeholder="Ej: 146" min="1"/>
+      </div>
+      <div class="field">
+        <label>Rating (0-10)</label>
+        <input type="number" id="f-rating" placeholder="Ej: 8.5" min="0" max="10" step="0.1"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Tags (separados por coma)</label>
+      <input type="text" id="f-tags" placeholder="Ej: terror, slasher, sobrenatural"/>
+    </div>
+
+    <div class="field">
+      <label>Sinopsis</label>
+      <textarea id="f-synopsis" placeholder="Sinopsis breve..." maxlength="2000"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="btn-modal-cancel">Cancelar</button>
+      <button class="btn btn-accent" id="btn-modal-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API_BASE = 'http://localhost:3000';
+var token = localStorage.getItem('hf_token') || '';
+var currentUser = null;
+var editingId = null;
+var movies = [];
+
+function get(id) { return document.getElementById(id); }
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  get('page-' + id).classList.add('active');
+}
+
+function showMsg(elId, text, type) {
+  var el = get(elId);
+  el.className = 'msg ' + (type || 'error');
+  el.textContent = text;
+  el.style.display = 'block';
+}
+
+function hideMsg(elId) { get(elId).style.display = 'none'; }
+
+function parseJwt(t) {
+  try { return JSON.parse(atob(t.split('.')[1])); } catch(e) { return {}; }
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function apiCall(method, path, body) {
+  var base = get('api-base-input') ? get('api-base-input').value.trim().replace(/\/$/, '') : API_BASE;
+  var url = base + path;
+  var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
+  if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+  if (body) opts.body = JSON.stringify(body);
+  var res = await fetch(url, opts);
+  var data = {};
+  try { data = await res.json(); } catch(e) {}
+  return { ok: res.ok, status: res.status, data: data };
+}
+
+// ── EVENTOS ──
+get('btn-login').addEventListener('click', doLogin);
+get('login-pass').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+get('btn-register').addEventListener('click', doRegister);
+get('reg-pass').addEventListener('keydown', function(e) { if (e.key === 'Enter') doRegister(); });
+get('link-to-register').addEventListener('click', function() {
+  get('panel-login').style.display = 'none';
+  get('panel-register').style.display = 'block';
+});
+get('link-to-login').addEventListener('click', function() {
+  get('panel-register').style.display = 'none';
+  get('panel-login').style.display = 'block';
+});
+get('btn-logout').addEventListener('click', doLogout);
+get('btn-add-movie').addEventListener('click', function() { openModal(null); });
+get('btn-modal-close').addEventListener('click', closeModal);
+get('btn-modal-cancel').addEventListener('click', closeModal);
+get('btn-modal-save').addEventListener('click', saveMovie);
+get('movie-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+// ── LOGIN ──
+async function doLogin() {
+  var email = get('login-email').value.trim();
+  var password = get('login-pass').value;
+  hideMsg('login-err');
+  if (!email || !password) { showMsg('login-err', 'Completá email y contraseña'); return; }
+  var btn = get('btn-login');
+  btn.disabled = true;
+  btn.textContent = 'Ingresando...';
+  try {
+    var r = await apiCall('POST', '/auth/login', { email: email, password: password });
+    if (r.ok && r.data.token) {
+      token = r.data.token;
+      localStorage.setItem('hf_token', token);
+      currentUser = parseJwt(token);
+      loadMainPage();
+    } else {
+      showMsg('login-err', r.data.message || r.data.error || 'Error ' + r.status + ': credenciales inválidas');
+    }
+  } catch(err) {
+    showMsg('login-err', 'No se pudo conectar al servidor en ' + get('api-base-input').value);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Iniciar sesión';
+}
+
+// ── REGISTER ──
+async function doRegister() {
+  var nombre = get('reg-nombre').value.trim();
+  var email = get('reg-email').value.trim();
+  var password = get('reg-pass').value;
+  hideMsg('reg-err'); hideMsg('reg-ok');
+  if (!nombre || !email || !password) { showMsg('reg-err', 'Completá todos los campos'); return; }
+  var btn = get('btn-register');
+  btn.disabled = true; btn.textContent = 'Registrando...';
+  try {
+    var r = await apiCall('POST', '/auth/register', { nombre: nombre, email: email, password: password });
+    if (r.ok) {
+      showMsg('reg-ok', 'Cuenta creada. Ahora podés iniciar sesión.', 'success');
+      setTimeout(function() {
+        get('panel-register').style.display = 'none';
+        get('panel-login').style.display = 'block';
+      }, 1500);
+    } else {
+      showMsg('reg-err', r.data.message || r.data.error || 'Error al registrarse');
+    }
+  } catch(err) {
+    showMsg('reg-err', 'No se pudo conectar al servidor');
+  }
+  btn.disabled = false; btn.textContent = 'Registrarse';
+}
+
+// ── LOGOUT ──
+function doLogout() {
+  token = ''; localStorage.removeItem('hf_token');
+  currentUser = null; movies = [];
+  get('nav-user').style.display = 'none';
+  get('btn-logout').style.display = 'none';
+  showPage('auth');
+}
+
+// ── MAIN ──
+function loadMainPage() {
+  showPage('movies');
+  var u = currentUser || parseJwt(token);
+  var isAdmin = u.isAdmin === true;
+  var nombre = u.nombre || u.email || 'Usuario';
+  get('nav-user').innerHTML = 'Hola, <span>' + esc(nombre) + '</span>';
+  get('nav-user').style.display = '';
+  get('btn-logout').style.display = '';
+  get('user-role-badge').innerHTML = isAdmin
+    ? '<span class="role-badge admin">Admin</span>'
+    : '<span class="role-badge user">Usuario</span>';
+  get('btn-add-movie').style.display = isAdmin ? '' : 'none';
+  loadMovies();
+}
+
+async function loadMovies() {
+  get('movies-container').innerHTML = '<div class="loading"><span class="spinner"></span>Cargando películas...</div>';
+  try {
+    var r = await apiCall('GET', '/movies');
+    if (!r.ok) {
+      if (r.status === 401) { doLogout(); return; }
+      get('movies-container').innerHTML = '<div class="empty-state"><div class="icon">!</div><p>Error ' + r.status + ': ' + (r.data.message || 'no se pudieron cargar las películas') + '</p></div>';
+      return;
+    }
+    movies = Array.isArray(r.data) ? r.data : (r.data.movies || r.data.data || []);
+    renderStats();
+    renderMovies();
+  } catch(err) {
+    get('movies-container').innerHTML = '<div class="empty-state"><div class="icon">!</div><p>No se pudo conectar al servidor</p></div>';
+  }
+}
+
+function renderStats() {
+  var years = movies.map(function(m) { return m.year; }).filter(Boolean);
+  var avg = years.length ? Math.round(years.reduce(function(a,b) { return a+b; }, 0) / years.length) : '-';
+  var ratings = movies.map(function(m) { return m.rating; }).filter(function(r) { return r > 0; });
+  var avgRating = ratings.length ? (ratings.reduce(function(a,b) { return a+b; }, 0) / ratings.length).toFixed(1) : '-';
+  get('stats-bar').innerHTML =
+    '<div class="stat-chip"><strong>' + movies.length + '</strong>Películas</div>' +
+    '<div class="stat-chip"><strong>' + avg + '</strong>Año promedio</div>' +
+    '<div class="stat-chip"><strong>' + avgRating + '</strong>Rating promedio</div>';
+}
+
+function renderMovies() {
+  var u = currentUser || parseJwt(token);
+  var isAdmin = u.isAdmin === true;
+  if (!movies.length) {
+    get('movies-container').innerHTML = '<div class="empty-state"><div class="icon">!</div><p>No hay películas todavía.</p></div>';
+    return;
+  }
+  var html = '<div class="movies-grid">';
+  movies.forEach(function(m) {
+    var id = m._id || m.id;
+    var tags = Array.isArray(m.tags) ? m.tags : [];
+    var tagsHtml = tags.map(function(t) { return '<span class="tag">' + esc(t) + '</span>'; }).join('');
+    var stars = m.rating > 0 ? '★ ' + m.rating : '';
+    var meta = [m.year, m.director, m.durationMinutes ? m.durationMinutes + ' min' : '', m.country].filter(Boolean).join(' · ');
+    html += '<div class="movie-card">' +
+      '<div class="movie-thumb-placeholder">🩸</div>' +
+      '<div class="movie-body">' +
+      '<div class="movie-title">' + esc(m.title || 'Sin título') + '</div>' +
+      '<div class="movie-meta">' + esc(meta) + '</div>' +
+      (stars ? '<div class="movie-rating">' + stars + '</div>' : '') +
+      (m.synopsis ? '<div class="movie-desc">' + esc(m.synopsis) + '</div>' : '') +
+      (tagsHtml ? '<div class="movie-tags">' + tagsHtml + '</div>' : '') +
+      (isAdmin
+        ? '<div class="movie-actions">' +
+          '<button class="btn btn-sm btn-edit" onclick="openModal(\'' + id + '\')">Editar</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="deleteMovie(\'' + id + '\')">Eliminar</button>' +
+          '</div>'
+        : '') +
+      '</div></div>';
+  });
+  html += '</div>';
+  get('movies-container').innerHTML = html;
+}
+
+// ── MODAL ──
+function openModal(id) {
+  editingId = id;
+  get('modal-title').textContent = id ? 'Editar película' : 'Nueva película';
+  hideMsg('form-err');
+  if (id) {
+    var m = movies.find(function(x) { return (x._id || x.id) === id; }) || {};
+    get('f-title').value = m.title || '';
+    get('f-director').value = m.director || '';
+    get('f-country').value = m.country || '';
+    get('f-year').value = m.year || '';
+    get('f-duration').value = m.durationMinutes || '';
+    get('f-rating').value = m.rating || '';
+    get('f-tags').value = Array.isArray(m.tags) ? m.tags.join(', ') : '';
+    get('f-synopsis').value = m.synopsis || '';
+  } else {
+    ['f-title','f-director','f-country','f-year','f-duration','f-rating','f-tags','f-synopsis']
+      .forEach(function(i) { get(i).value = ''; });
+  }
+  get('movie-modal').classList.add('open');
+}
+
+function closeModal() {
+  get('movie-modal').classList.remove('open');
+  editingId = null;
+}
+
+async function saveMovie() {
+  var title = get('f-title').value.trim();
+  var director = get('f-director').value.trim();
+  var year = parseInt(get('f-year').value);
+  var duration = parseInt(get('f-duration').value);
+
+  // Validar campos requeridos
+  if (!title) { showMsg('form-err', 'El título es obligatorio'); return; }
+  if (!director) { showMsg('form-err', 'El director es obligatorio'); return; }
+  if (!year) { showMsg('form-err', 'El año es obligatorio'); return; }
+  if (!duration || duration < 1) { showMsg('form-err', 'La duración en minutos es obligatoria'); return; }
+
+  // Procesar tags
+  var tagsRaw = get('f-tags').value.trim();
+  var tags = tagsRaw
+    ? tagsRaw.split(',').map(function(t) { return t.trim(); }).filter(Boolean)
+    : ['terror'];
+
+  var body = {
+    title: title,
+    director: director,
+    year: year,
+    durationMinutes: duration,
+    tags: tags
+  };
+
+  var rating = parseFloat(get('f-rating').value);
+  if (!isNaN(rating)) body.rating = rating;
+
+  var country = get('f-country').value.trim();
+  if (country) body.country = country;
+
+  var synopsis = get('f-synopsis').value.trim();
+  if (synopsis) body.synopsis = synopsis;
+
+  var r = editingId
+    ? await apiCall('PUT', '/movies/' + editingId, body)
+    : await apiCall('POST', '/movies', body);
+
+  if (r.ok) { closeModal(); loadMovies(); }
+  else showMsg('form-err', r.data.message || r.data.error || 'Error al guardar');
+}
+
+async function deleteMovie(id) {
+  if (!confirm('¿Eliminar esta película?')) return;
+  var r = await apiCall('DELETE', '/movies/' + id);
+  if (r.ok) loadMovies();
+  else alert('Error al eliminar: ' + (r.data.message || 'desconocido'));
+}
+
+// ── INIT ──
+if (token) {
+  currentUser = parseJwt(token);
+  loadMainPage();
+}
+</script>
+</body>
+</html>
